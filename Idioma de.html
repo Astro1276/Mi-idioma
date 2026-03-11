@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traductor Políglota Aleatorio</title>
+    <style>
+        :root {
+            --bg: #f8f9fa; --container: #ffffff; --text: #212529; --border: #dee2e6; --primary: #4a69bd; --accent: #e55039; --btn-ayuda: #38ada9;
+        }
+        .dark-mode {
+            --bg: #121212; --container: #1e1e1e; --text: #e0e0e0; --border: #333; --primary: #6a89cc; --accent: #eb4d4b; --btn-ayuda: #079992;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; background: var(--bg); color: var(--text); transition: 0.3s; }
+        .box { background: var(--container); padding: 25px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); border: 1px solid var(--border); }
+        
+        .header-tools { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 10px; flex-wrap: wrap; }
+        h2 { text-align: center; margin: 10px 0; width: 100%; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
+
+        .input-group { display: flex; gap: 10px; margin: 20px 0; }
+        input { flex-grow: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: var(--container); color: var(--text); font-size: 16px; outline: none; }
+        input:focus { border-color: var(--primary); }
+        
+        button { padding: 12px 20px; cursor: pointer; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; }
+        .btn-ayuda { background: var(--btn-ayuda); }
+        button:active { transform: scale(0.95); }
+
+        .resultado-cont { padding: 15px; background: rgba(0,0,0,0.04); border-radius: 8px; border-left: 5px solid var(--primary); margin-bottom: 20px; word-wrap: break-word; }
+        
+        ul { list-style: none; padding: 0; max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+        li { padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .original { font-weight: bold; font-size: 0.9em; }
+        .inventada { color: var(--accent); font-family: 'Courier New', Courier, monospace; font-weight: bold; }
+
+        /* Modal de Ayuda */
+        #modalAyuda { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--container); padding: 25px; border: 2px solid var(--primary); border-radius: 15px; box-shadow: 0 0 40px rgba(0,0,0,0.4); z-index: 100; text-align: center; width: 85%; max-width: 350px; }
+    </style>
+</head>
+<body>
+
+<div id="modalAyuda">
+    <h3>📧 Soporte Técnico</h3>
+    <p>Si el botón de correo no abre tu app, escríbenos manualmente a:</p>
+    <strong style="color:var(--accent); font-size: 1.1em;">jhosniel2023@gmail.com</strong>
+    <br><br>
+    <button onclick="cerrarAyuda()">Entendido</button>
+</div>
+
+<div class="box">
+    <div class="header-tools">
+        <button onclick="toggleDarkMode()">🌓 Modo Oscuro</button>
+        <button onclick="abrirAyuda()" class="btn-ayuda">✉ Ayuda</button>
+    </div>
+
+    <h2>Traductor Multilingüe</h2>
+
+    <div class="input-group">
+        <input type="text" id="inputPalabra" placeholder="Escribe algo...">
+        <button onclick="procesar()">Mezclar</button>
+    </div>
+
+    <div id="resultadoArea" style="display:none;">
+        <div class="resultado-cont" id="textoResultado"></div>
+    </div>
+
+    <div class="diccionario">
+        <strong>Diccionario Guardado:</strong>
+        <ul id="listaPalabras"></ul>
+    </div>
+</div>
+
+<script>
+    // Base de datos de fragmentos de idiomas reales
+    const fragmentos = {
+        italiano: ["oni", "etti", "ello", "anza", "ismo"],
+        aleman: ["burg", "stein", "kraft", "heit", "licht"],
+        frances: ["age", "ique", "eau", "ante", "elle"],
+        latin: ["um", "ex", "is", "arum", "ibus"],
+        esperanto: ["o", "as", "is", "uj", "aro"]
+    };
+
+    let db = JSON.parse(localStorage.getItem('dbMultilingue')) || {};
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    }
+
+    if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+
+    function abrirAyuda() {
+        window.location.href = "mailto:jhosniel2023@gmail.com?subject=Consulta%20Traductor";
+        document.getElementById('modalAyuda').style.display = "block";
+    }
+
+    function cerrarAyuda() {
+        document.getElementById('modalAyuda').style.display = "none";
+    }
+
+    function generarFusion(p) {
+        const idiomas = Object.keys(fragmentos);
+        
+        // Elegir dos idiomas aleatorios
+        const id1 = idiomas[Math.floor(Math.random() * idiomas.length)];
+        const id2 = idiomas[Math.floor(Math.random() * idiomas.length)];
+        
+        const frag1 = fragmentos[id1][Math.floor(Math.random() * fragmentos[id1].length)];
+        const frag2 = fragmentos[id2][Math.floor(Math.random() * fragmentos[id2].length)];
+
+        // Construir palabra: Mitad original + Fragmento 1 + Fragmento 2
+        let raiz = p.substring(0, Math.ceil(p.length / 1.5));
+        let resultado = raiz + frag1 + frag2;
+
+        // Limpieza de letras triples o raras
+        return resultado.replace(/(.)\1+/g, '$1').toLowerCase();
+    }
+
+    function procesar() {
+        const input = document.getElementById('inputPalabra').value.trim();
+        if (!input) return;
+
+        let palabras = input.split(/\s+/);
+        let fraseFinal = [];
+
+        palabras.forEach(p => {
+            let limpia = p.toLowerCase().replace(/[^a-záéíóúñ]/g, "");
+            if (!limpia) return;
+
+            if (!db[limpia]) {
+                db[limpia] = generarFusion(limpia);
+                localStorage.setItem('dbMultilingue', JSON.stringify(db));
+            }
+            fraseFinal.push(`${limpia}:${db[limpia]}`);
+        });
+
+        document.getElementById('textoResultado').innerText = fraseFinal.join(" ");
+        document.getElementById('resultadoArea').style.display = "block";
+        actualizarVista();
+        document.getElementById('inputPalabra').value = "";
+    }
+
+    function actualizarVista() {
+        const lista = document.getElementById('listaPalabras');
+        lista.innerHTML = "";
+        Object.entries(db).reverse().forEach(([orig, inv]) => {
+            let li = document.createElement('li');
+            li.innerHTML = `<span class="original">${orig}</span> <span class="inventada">${inv}</span>`;
+            lista.appendChild(li);
+        });
+    }
+
+    actualizarVista();
+</script>
+
+</body>
+</html>
